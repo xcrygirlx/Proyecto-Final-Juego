@@ -1,0 +1,146 @@
+import pygame, sys, random
+
+pygame.init()
+
+# Configuración de la pantalla
+superficie_juego = pygame.display.set_mode((500, 500))
+pygame.display.set_caption("Juego de la Serpiente")
+
+# Configuración de la fuente
+fuente = pygame.font.Font(None, 30)
+fps = pygame.time.Clock()
+
+def dibujar_texto(superficie, texto, tamaño, color, posicion):
+    fuente = pygame.font.Font(None, tamaño)
+    texto_superficie = fuente.render(texto, True, color)
+    texto_rect = texto_superficie.get_rect(center=posicion)
+    superficie.blit(texto_superficie, texto_rect)
+
+def generar_comida():
+    posicion_aleatoria = random.randint(0, 49) * 10
+    posicion_comida = [posicion_aleatoria, random.randint(0, 49) * 10]
+    return posicion_comida
+
+def juego_principal():
+    posicion_serpiente = [100, 50]
+    cuerpo_serpiente = [[100, 50], [90, 50], [80, 50]]
+    direccion = "DERECHA"
+    ejecutando = True
+    posicion_comida = generar_comida()
+    puntaje = 0
+
+    while ejecutando:
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if evento.type == pygame.KEYDOWN:
+                if evento.key == pygame.K_RIGHT and direccion != "IZQUIERDA":
+                    direccion = "DERECHA"
+                if evento.key == pygame.K_LEFT and direccion != "DERECHA":
+                    direccion = "IZQUIERDA"
+                if evento.key == pygame.K_UP and direccion != "ABAJO":
+                    direccion = "ARRIBA"
+                if evento.key == pygame.K_DOWN and direccion != "ARRIBA":
+                    direccion = "ABAJO"
+
+        if direccion == "DERECHA":
+            posicion_serpiente[0] += 10
+        if direccion == "IZQUIERDA":
+            posicion_serpiente[0] -= 10
+        if direccion == "ARRIBA":
+            posicion_serpiente[1] -= 10
+        if direccion == "ABAJO":
+            posicion_serpiente[1] += 10
+
+        cuerpo_serpiente.insert(0, list(posicion_serpiente))
+
+        if posicion_serpiente == posicion_comida:
+            posicion_comida = generar_comida()
+            puntaje += 1
+        else:
+            cuerpo_serpiente.pop()
+
+        # Verificar colisión con el cuerpo
+        cabeza = cuerpo_serpiente[0]
+        for parte in cuerpo_serpiente[1:]:
+            if cabeza == parte:
+                ejecutando = False
+
+        # Verificar colisión con los bordes
+        if posicion_serpiente[0] < 0 or posicion_serpiente[0] >= 500 or posicion_serpiente[1] < 0 or posicion_serpiente[1] >= 500:
+            ejecutando = False
+
+        superficie_juego.fill((0, 0, 0))  # Fondo negro
+
+        for pos in cuerpo_serpiente:
+            pygame.draw.rect(superficie_juego, (200, 200, 200), pygame.Rect(pos[0], pos[1], 10, 10))
+
+        pygame.draw.rect(superficie_juego, (169, 6, 6), pygame.Rect(posicion_comida[0], posicion_comida[1], 10, 10))
+
+        texto = fuente.render(f"Puntaje: {puntaje}", True, (200, 60, 80))
+        superficie_juego.blit(texto, (50, 20))
+
+        if puntaje < 10:
+            fps.tick(10)
+        else:
+            fps.tick(20)
+
+        pygame.display.flip()
+
+    return puntaje
+
+def menu_principal():
+    while True:
+        superficie_juego.fill((0, 0, 0))  # Fondo negro
+        dibujar_texto(superficie_juego, "Juego de la serpiente", 50, (200, 200, 200), (250, 150))
+        dibujar_texto(superficie_juego, "Jugar", 40, (0, 200, 0), (250, 250))
+        dibujar_texto(superficie_juego, "Salir", 40, (200, 0, 0), (250, 350))
+
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if evento.type == pygame.MOUSEBUTTONDOWN:
+                posicion_mouse = pygame.mouse.get_pos()
+                if 200 < posicion_mouse[0] < 300 and 230 < posicion_mouse[1] < 270:
+                    return
+                if 200 < posicion_mouse[0] < 300 and 330 < posicion_mouse[1] < 370:
+                    pygame.quit()
+                    sys.exit()
+
+        pygame.display.flip()
+        fps.tick(30)
+
+def menu_fin_juego(puntaje):
+    while True:
+        superficie_juego.fill((0, 0, 0))  # Fondo negro
+        dibujar_texto(superficie_juego, "JUEGO TERMINADO", 50, (200, 0, 0), (250, 150))
+        dibujar_texto(superficie_juego, f"Puntaje de esta partida: {puntaje}", 40, (200, 200, 200), (250, 220))
+        dibujar_texto(superficie_juego, "JUGAR DE NUEVO", 40, (0, 200, 0), (250, 300))
+        dibujar_texto(superficie_juego, "YA TERMINASTE EL JUEGO", 40, (200, 0, 0), (250, 400))
+
+        for evento in pygame.event.get():
+            if evento.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            if evento.type == pygame.MOUSEBUTTONDOWN:
+                posicion_mouse = pygame.mouse.get_pos()
+                if 175 < posicion_mouse[0] < 325 and 280 < posicion_mouse[1] < 320:
+                    return True
+                if 175 < posicion_mouse[0] < 325 and 380 < posicion_mouse[1] < 420:
+                    pygame.quit()
+                    sys.exit()
+
+        pygame.display.flip()
+        fps.tick(30)
+
+def principal():
+    while True:
+        menu_principal()
+        puntaje = juego_principal()
+        jugar_de_nuevo = menu_fin_juego(puntaje)
+        if not jugar_de_nuevo:
+            break
+
+principal()
